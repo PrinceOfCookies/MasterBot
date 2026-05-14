@@ -1,3 +1,6 @@
 [submodule "bots/strwremastered"]
 	path = bots/strwremastered
 	url = git@github.com:PrinceOfCookies/StrwRemastered.git
+[submodule "bots/kittycultbot"]
+	path = bots/kittycultbot
+	url = git@github.com:PrinceOfCookies/KittyCultBot2.0.git

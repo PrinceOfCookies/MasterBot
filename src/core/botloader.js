@@ -25,14 +25,23 @@ async function startBot(bot) {
 	client.db = await createBotDatabase(bot);
 	client.sql = client.db;
 
-    loadTools(client, bot);
-    loadFunctions(client, bot);
-    
-    if (typeof client.handleCommands === "function") {
-        await client.handleCommands();
-    }
-    
-    loadEvents(client, bot);
+	loadTools(client, bot);
+	loadFunctions(client, bot);
+
+	if (typeof bot.config.setup === "function") {
+		await bot.config.setup(client, bot);
+	}
+
+	if (bot.config.autoHandleCommands !== false && typeof client.handleCommands === "function") {
+		await client.handleCommands();
+	}
+
+	loadEvents(client, bot);
+
+	if (bot.config.autoHandleEvents !== false && typeof client.handleEvents === "function") {
+		await client.handleEvents();
+	}
+
 	await client.login(token);
 
 	if (typeof bot.config.afterLogin === "function") {

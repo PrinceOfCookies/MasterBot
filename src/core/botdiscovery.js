@@ -1,6 +1,6 @@
 const path = require("path");
 const { existsSync, readdirSync, statSync } = require("fs");
-const { loadBotEnv } = require("./botEnv");
+const { loadBotEnv } = require("./botenv");
 
 function findBots() {
 	const botsRoot = path.join(process.cwd(), "bots");

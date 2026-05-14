@@ -1,9 +1,9 @@
 const chalk = require("chalk");
-const { findBots } = require("./botDiscovery");
-const { createClient } = require("./clientFactory");
-const { createBotDatabase } = require("./databaseFactory");
-const { loadTools, loadFunctions } = require("./functionLoader");
-const { loadEvents } = require("./eventLoader");
+const { findBots } = require("./botdiscovery");
+const { createClient } = require("./clientfactory");
+const { createBotDatabase } = require("./database");
+const { loadTools, loadFunctions } = require("./functionloader");
+const { loadEvents } = require("./eventloader");
 
 function getBotToken(bot) {
 	if (bot.config.token) return bot.config.token;

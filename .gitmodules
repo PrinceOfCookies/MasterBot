@@ -1,0 +1,3 @@
+[submodule "bots/strwremastered"]
+	path = bots/strwremastered
+	url = git@github.com:PrinceOfCookies/StrwRemastered.git

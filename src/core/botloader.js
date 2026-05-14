@@ -13,6 +13,11 @@ function getBotToken(bot) {
 }
 
 async function startBot(bot) {
+	if (bot.config.enabled === false) {
+		console.log(chalk.yellow(`[${bot.name}] Disabled in bot config, skipping.`));
+		return;
+	}
+
 	const token = getBotToken(bot);
 
 	if (!token) {

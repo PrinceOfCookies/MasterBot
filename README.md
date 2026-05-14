@@ -22,6 +22,7 @@ MasterBot is the host that discovers bots under `bots/<botName>/`, loads their c
 
 ## Bot conventions
 
+- `botConfig.enabled === false` prevents that bot from starting
 - `bot.env.TOKEN` or `botConfig.token` supplies the login token
 - `bot.env.CLIENT_ID` or `botConfig.clientId` supplies the slash command application id
 - `botPaths.commands` points at the bot command root

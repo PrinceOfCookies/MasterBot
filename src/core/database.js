@@ -29,7 +29,16 @@ async function createBotDatabase(bot) {
     const start = Date.now()
     const pool = mysql.createPool(conf)
 
-    await pool.query("SELECT 1")
+    await new Promise((resolve, reject) => {
+        pool.query("SELECT 1", (err) => {
+            if (err) {
+                reject(err)
+                return
+            }
+
+            resolve()
+        })
+    })
     console.log(green(`[${bot.name}] SQL connected in ${yellow(Date.now() - start)}ms`))
 
     return pool

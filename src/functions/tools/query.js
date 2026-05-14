@@ -1,7 +1,7 @@
 module.exports = (client) => {
 	client.query = (sql, params) =>
 		new Promise((resolve, reject) => {
-			const connection = client.connection;
+			const connection = client.connection ?? client.db ?? client.sql;
 
 			if (!connection || typeof connection.query !== "function") {
 				reject(new Error(`[${client.botName}] Database connection is not ready`));

@@ -24,6 +24,7 @@ async function startBot(bot) {
 
 	client.db = await createBotDatabase(bot);
 	client.sql = client.db;
+	client.connection = client.db;
 
 	loadTools(client, bot);
 	loadFunctions(client, bot);

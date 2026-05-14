@@ -1,5 +1,5 @@
 const mysql = require("mysql")
-const { yellow, orange, green } = require("chalk")
+const { yellow, blue, green } = require("chalk")
 
 function getSQLConfig(bot) {
     return {
@@ -15,14 +15,14 @@ function getSQLConfig(bot) {
 }
 
 function hasSQLConfig(config) {
-    return Boolean(config.host && config.user && config.db)
+    return Boolean(config.host && config.user && config.database);
 }
 
 async function createBotDatabase(bot) {
     const conf = getSQLConfig(bot)
 
     if (!hasSQLConfig(conf)) {
-        console.log(orange(`[${bot.name}] No SQL config found.`))
+        console.log(blue((`[${bot.name}] No SQL config found.`)))
         return null;
     }
 

@@ -25,7 +25,7 @@ const defaultClientOptions = {
 };
 
 const defaultPaths = {
-    tools: "src/tools",
+    tools: "src/functions/tools",
 	functions: "src/functions",
 	events: "src/events",
 	commands: "src/commands"

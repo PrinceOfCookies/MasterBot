@@ -1,0 +1,102 @@
+const { execFile } = require("child_process");
+const { promisify } = require("util");
+const path = require("path");
+const { findBots } = require("../core/botDiscovery");
+
+const execFileAsync = promisify(execFile);
+const MAX_BUFFER = 10 * 1024 * 1024;
+
+function getKnownBotNames() {
+	return new Set(findBots().map((bot) => bot.name));
+}
+
+function assertKnownBotName(name) {
+	if (typeof name !== "string" || !name.trim()) {
+		throw new Error("A bot name is required.");
+	}
+
+	const knownBotNames = getKnownBotNames();
+
+	if (!knownBotNames.has(name)) {
+		throw new Error(`Unknown bot: ${name}`);
+	}
+}
+
+async function runPm2(args) {
+	try {
+		const result = await execFileAsync("npx", ["pm2", ...args], {
+			cwd: process.cwd(),
+			env: process.env,
+			encoding: "utf8",
+			maxBuffer: MAX_BUFFER
+		});
+
+		return {
+			stdout: result.stdout ?? "",
+			stderr: result.stderr ?? ""
+		};
+	} catch (error) {
+		const stdout = error.stdout ?? "";
+		const stderr = error.stderr ?? "";
+		const reason = stderr || stdout || error.message;
+		const message = `[pm2] command failed: npx pm2 ${args.join(" ")}`;
+		const wrapped = new Error(reason ? `${message}\n${reason}` : message);
+		wrapped.cause = error;
+		wrapped.stdout = stdout;
+		wrapped.stderr = stderr;
+		throw wrapped;
+	}
+}
+
+async function getProcessList() {
+	const { stdout } = await runPm2(["jlist"]);
+	const trimmed = stdout.trim();
+
+	if (!trimmed) return [];
+
+	try {
+		const parsed = JSON.parse(trimmed);
+		return Array.isArray(parsed) ? parsed : [];
+	} catch (error) {
+		const wrapped = new Error("Failed to parse PM2 jlist output as JSON.");
+		wrapped.cause = error;
+		wrapped.stdout = stdout;
+		throw wrapped;
+	}
+}
+
+async function getProcessByName(name) {
+	const processes = await getProcessList();
+	return processes.find((process) => process?.name === name) ?? null;
+}
+
+async function restartProcess(name) {
+	assertKnownBotName(name);
+	return runPm2(["restart", name, "--update-env"]);
+}
+
+async function stopProcess(name) {
+	assertKnownBotName(name);
+	return runPm2(["stop", name]);
+}
+
+async function startProcess(name) {
+	assertKnownBotName(name);
+	return runPm2(["start", path.join(process.cwd(), "ecosystem.config.js"), "--only", name, "--update-env"]);
+}
+
+async function getLogs(name, lines = 50) {
+	assertKnownBotName(name);
+	const safeLines = Number.isFinite(Number(lines)) ? Math.max(1, Math.floor(Number(lines))) : 50;
+	const { stdout, stderr } = await runPm2(["logs", name, "--lines", String(safeLines), "--nostream"]);
+	return `${stdout}${stderr}`;
+}
+
+module.exports = {
+	getLogs,
+	getProcessByName,
+	getProcessList,
+	restartProcess,
+	startProcess,
+	stopProcess
+};

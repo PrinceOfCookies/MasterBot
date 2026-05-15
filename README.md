@@ -11,13 +11,14 @@ MasterBot is the host repo. It discovers bots under `bots/<botName>/`, loads eac
 - Loads shared functions from `src/functions/handlers`
 - Loads shared events from `src/events`
 - Lets bots override paths, tools, functions, and events through their own config
-- Generates `ecosystem.config.js` from the `bots/` folder for PM2 worker mode
+- Generates `ecosystem.config.js` from the `bots/` folder and includes a separate PM2 health monitor process
 
 ## Layout
 
 - `index.js` - entrypoint
 - `src/core/` - bot discovery, client setup, loaders, and database bootstrapping
 - `src/worker/` - single-bot worker entry used by PM2
+- `src/pm2/` - PM2 client helpers, health monitor, alert sink, and allocation logic
 - `src/functions/` - shared tools and handlers
 - `src/events/` - shared events
 - `bots/<botName>/` - bot-specific config, env, commands, events, and tools
@@ -35,6 +36,7 @@ MasterBot is the host repo. It discovers bots under `bots/<botName>/`, loads eac
 ## Running
 
 - `npm start` - rebuilds `ecosystem.config.js` and runs `pm2-runtime`
+- `npm start` - rebuilds `ecosystem.config.js` and runs `pm2-runtime` for bots plus the monitor process
 - `npm run build:ecosystem` - rebuilds the generated PM2 config without starting bots
 - `npm run pm2:start` - rebuilds the generated PM2 config and starts PM2 in the background
 - `npm run pm2:list`, `npm run pm2:logs`, `npm run pm2:monit`

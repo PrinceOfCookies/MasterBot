@@ -1,5 +1,5 @@
 const path = require("path");
-const { existsSync, readFileSync, writeFileSync } = require("fs");
+const { readFileSync, renameSync, writeFileSync } = require("fs");
 const { findBots } = require("../src/core/botDiscovery");
 
 function toSortedObject(source = {}) {
@@ -54,6 +54,25 @@ function buildApp(bot, cwd) {
 	};
 }
 
+function buildMonitorApp(cwd) {
+	return {
+		name: "masterbot-monitor",
+		script: "scripts/monitorPm2.js",
+		cwd,
+		instances: 1,
+		autorestart: true,
+		watch: false,
+		max_memory_restart: "256M",
+		min_uptime: "10s",
+		max_restarts: 10,
+		restart_delay: 5000,
+		env: {
+			MASTER_HEALTH_MONITOR: "true",
+			NODE_ENV: process.env.NODE_ENV ?? "production"
+		}
+	};
+}
+
 function buildEcosystemContent(apps) {
 	const appsJsonLines = JSON.stringify(apps, null, 2).split("\n");
 	const appsJson = [appsJsonLines[0], ...appsJsonLines.slice(1).map((line) => `  ${line}`)].join("\n");
@@ -65,20 +84,29 @@ function main() {
 	const cwd = process.cwd();
 	const ecosystemPath = path.join(cwd, "ecosystem.config.js");
 	const bots = findBots().sort((left, right) => left.name.localeCompare(right.name));
-	const apps = bots.map((bot) => buildApp(bot, cwd));
+	const apps = [...bots.map((bot) => buildApp(bot, cwd)), buildMonitorApp(cwd)];
 	const nextContent = buildEcosystemContent(apps);
+	const tempPath = path.join(
+		cwd,
+		`.ecosystem.config.${process.pid}.${Math.random().toString(16).slice(2)}.tmp`
+	);
 
-	if (existsSync(ecosystemPath)) {
+	try {
 		const currentContent = readFileSync(ecosystemPath, "utf8");
 
 		if (currentContent === nextContent) {
 			console.log("ecosystem.config.js unchanged");
 			return;
 		}
+	} catch (error) {
+		if (error.code !== "ENOENT") {
+			throw error;
+		}
 	}
 
-	writeFileSync(ecosystemPath, nextContent);
-	console.log(`Built ecosystem.config.js with ${apps.length} bot(s).`);
+	writeFileSync(tempPath, nextContent);
+	renameSync(tempPath, ecosystemPath);
+	console.log(`Built ecosystem.config.js with ${bots.length} bot(s) and 1 monitor.`);
 }
 
 main();

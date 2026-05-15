@@ -6,6 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:ecosystem": "node scripts/buildEcosystem.js",
+    "monitor": "node scripts/monitorPm2.js",
+    "start:monitor": "npm run build:ecosystem && node scripts/monitorPm2.js",
     "start": "npm run build:ecosystem && npx pm2-runtime start ecosystem.config.js",
     "pm2:start": "npm run build:ecosystem && npx pm2 start ecosystem.config.js",
     "pm2:list": "npx pm2 list",

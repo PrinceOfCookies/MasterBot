@@ -34,6 +34,10 @@ It also generates PM2 config for a separate optional Rust watchdog process that 
 - `bot.env.CLIENT_ID` or `botConfig.clientId` supplies the slash command application id
 - `botPaths.commands` points at the bot command root
 - `client.handleCommands()` is owned by the host and registers slash commands for the bot
+- Slash command registration is hash-gated and skips REST refreshes when the command definitions have not changed
+- `client.lazyFunctions.<name>()` loads configured lazy functions on first use and keeps the module cached after that
+- PM2 status readers use an in-memory cache that refreshes every few seconds instead of calling `pm2 jlist` on each request
+- Startup profiling logs timing marks for the main boot phases when a bot finishes starting
 - `BOT_NAME` is set per PM2 worker so `src/worker/botWorker.js` can start exactly one bot
 - The Rust watchdog is optional and only added to PM2 when `rust/masterbot-watchdog/target/release/masterbot-watchdog` exists
 
@@ -90,5 +94,5 @@ If the release binary does not exist, `npm run build:ecosystem` will skip the wa
 - Each worker uses `instances: 1`, `autorestart: true`, per-bot `NODE_OPTIONS`, and per-bot `max_memory_restart`.
 - The Rust watchdog uses PM2 status as input and reports guardrail allocation for bots only. It is not a hard resource cap.
 - The generated ecosystem file is only rewritten when the content changes.
-- The host currently supports shared command loading, shared query helpers, and per-bot overrides.
+- The host currently supports shared command loading, shared query helpers, startup caches, and per-bot overrides.
 - Bot-specific code should stay inside the bot folder unless it is meant to be shared across every bot.

@@ -1,4 +1,5 @@
 // icl ts was like 90% ai, idk rust rn, but i do plan to look through and rewrite bad stuff here!!
+// I mean hey atleast i understand most of it! 
 
 use anyhow::{anyhow, Context, Result};
 use clap::Parser;
@@ -12,6 +13,7 @@ use sysinfo::System;
 
 const WATCHDOG_NAME: &str = "masterbot-watchdog";
 const WATCHDOG_MARKER: &str = "MASTERBOT_WATCHDOG";
+const CONTROL_MARKER: &str = "MASTERBOT_CONTROL";
 const BOT_NAME_MARKER: &str = "BOT_NAME";
 const RESERVE_PERCENT: f64 = 5.0;
 const CPU_LOW_THRESHOLD: f64 = 30.0;
@@ -176,20 +178,30 @@ fn pm2_env_object(process: &Value) -> Option<&serde_json::Map<String, Value>> {
 }
 
 fn is_watchdog_process(process: &Value) -> bool {
-    let name = value_as_string(process.get("name"));
-    let env = env_object(process);
-    let marker = env
-        .and_then(|env| env.get(WATCHDOG_MARKER))
-        .and_then(Value::as_str)
-        .unwrap_or("");
+	let name = value_as_string(process.get("name"));
+	let env = env_object(process);
+	let marker = env
+		.and_then(|env| env.get(WATCHDOG_MARKER))
+		.and_then(Value::as_str)
+		.unwrap_or("");
 
-    name.as_deref() == Some(WATCHDOG_NAME) || marker == "1"
+	name.as_deref() == Some(WATCHDOG_NAME) || marker == "1"
+}
+
+fn is_control_process(process: &Value) -> bool {
+	let env = env_object(process);
+	let marker = env
+		.and_then(|env| env.get(CONTROL_MARKER))
+		.and_then(Value::as_str)
+		.unwrap_or("");
+
+	marker == "1"
 }
 
 fn is_bot_process(process: &Value) -> bool {
-    if is_watchdog_process(process) {
-        return false;
-    }
+	if is_watchdog_process(process) || is_control_process(process) {
+		return false;
+	}
 
     env_object(process)
         .and_then(|env| env.get(BOT_NAME_MARKER))
@@ -199,9 +211,13 @@ fn is_bot_process(process: &Value) -> bool {
 }
 
 fn process_name(process: &Value) -> Option<String> {
-    env_object(process)
-        .and_then(|env| env.get(BOT_NAME_MARKER))
-        .and_then(Value::as_str)
+	if is_control_process(process) {
+		return None;
+	}
+
+	env_object(process)
+		.and_then(|env| env.get(BOT_NAME_MARKER))
+		.and_then(Value::as_str)
         .filter(|value| !value.trim().is_empty())
         .map(|value| value.to_string())
         .or_else(|| value_as_string(process.get("name")))

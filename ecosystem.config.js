@@ -33,6 +33,22 @@ module.exports = {
         "NODE_ENV": "production",
         "NODE_OPTIONS": "--max-old-space-size=384"
       }
+    },
+    {
+      "name": "masterbot-monitor",
+      "script": "scripts/monitorPm2.js",
+      "cwd": "/home/Cookies/MainHDD/Projects/active/MasterBot",
+      "instances": 1,
+      "autorestart": true,
+      "watch": false,
+      "max_memory_restart": "256M",
+      "min_uptime": "10s",
+      "max_restarts": 10,
+      "restart_delay": 5000,
+      "env": {
+        "MASTER_HEALTH_MONITOR": "true",
+        "NODE_ENV": "production"
+      }
     }
   ]
 };

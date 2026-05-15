@@ -73,6 +73,21 @@ function buildMonitorApp(cwd) {
 	};
 }
 
+function buildControlApp(cwd) {
+	return {
+		name: "masterbot-control",
+		script: "src/control/controlBot.js",
+		cwd,
+		instances: 1,
+		autorestart: true,
+		watch: false,
+		env: {
+			MASTERBOT_CONTROL: "1",
+			NODE_ENV: process.env.NODE_ENV ?? "production"
+		}
+	};
+}
+
 function buildWatchdogApp(cwd) {
 	return {
 		name: "masterbot-watchdog",
@@ -101,7 +116,7 @@ function main() {
 	const ecosystemPath = path.join(cwd, "ecosystem.config.js");
 	const watchdogBinaryPath = path.join(cwd, "rust/masterbot-watchdog/target/release/masterbot-watchdog");
 	const bots = findBots().sort((left, right) => left.name.localeCompare(right.name));
-	const apps = [...bots.map((bot) => buildApp(bot, cwd)), buildMonitorApp(cwd)];
+	const apps = [...bots.map((bot) => buildApp(bot, cwd)), buildMonitorApp(cwd), buildControlApp(cwd)];
 
 	if (existsSync(watchdogBinaryPath)) {
 		apps.push(buildWatchdogApp(cwd));
@@ -130,7 +145,9 @@ function main() {
 
 	writeFileSync(tempPath, nextContent);
 	renameSync(tempPath, ecosystemPath);
-	console.log(`Built ecosystem.config.js with ${bots.length} bot(s), 1 monitor, and ${existsSync(watchdogBinaryPath) ? "1 watchdog" : "0 watchdog"}.`);
+	console.log(
+		`Built ecosystem.config.js with ${bots.length} bot(s), 1 monitor, 1 control app, and ${existsSync(watchdogBinaryPath) ? "1 watchdog" : "0 watchdog"}.`
+	);
 }
 
 main();

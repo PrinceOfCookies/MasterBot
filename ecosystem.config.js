@@ -51,6 +51,18 @@ module.exports = {
       }
     },
     {
+      "name": "masterbot-control",
+      "script": "src/control/controlBot.js",
+      "cwd": "/home/Cookies/MainHDD/Projects/active/MasterBot",
+      "instances": 1,
+      "autorestart": true,
+      "watch": false,
+      "env": {
+        "MASTERBOT_CONTROL": "1",
+        "NODE_ENV": "production"
+      }
+    },
+    {
       "name": "masterbot-watchdog",
       "script": "rust/masterbot-watchdog/target/release/masterbot-watchdog",
       "args": "--watch --interval 10",

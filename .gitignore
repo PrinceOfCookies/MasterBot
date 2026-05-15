@@ -1,5 +1,9 @@
 node_modules
 *.env
-*.gitignore
-*.gitmodules
+.gitignore
+.gitmodules
 .vscode
+ecosystem.config.js
+rust/Cargo.lock
+rust/target/
+rust/masterbot-watchdog/target/

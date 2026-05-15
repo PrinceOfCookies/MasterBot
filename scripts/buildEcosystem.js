@@ -1,5 +1,5 @@
 const path = require("path");
-const { readFileSync, renameSync, writeFileSync } = require("fs");
+const { existsSync, readFileSync, renameSync, writeFileSync } = require("fs");
 const { findBots } = require("../src/core/botDiscovery");
 
 function toSortedObject(source = {}) {
@@ -73,6 +73,22 @@ function buildMonitorApp(cwd) {
 	};
 }
 
+function buildWatchdogApp(cwd) {
+	return {
+		name: "masterbot-watchdog",
+		script: "rust/masterbot-watchdog/target/release/masterbot-watchdog",
+		args: "--watch --interval 10",
+		cwd,
+		instances: 1,
+		autorestart: true,
+		watch: false,
+		env: {
+			NODE_ENV: process.env.NODE_ENV ?? "production",
+			MASTERBOT_WATCHDOG: "1"
+		}
+	};
+}
+
 function buildEcosystemContent(apps) {
 	const appsJsonLines = JSON.stringify(apps, null, 2).split("\n");
 	const appsJson = [appsJsonLines[0], ...appsJsonLines.slice(1).map((line) => `  ${line}`)].join("\n");
@@ -83,8 +99,16 @@ function buildEcosystemContent(apps) {
 function main() {
 	const cwd = process.cwd();
 	const ecosystemPath = path.join(cwd, "ecosystem.config.js");
+	const watchdogBinaryPath = path.join(cwd, "rust/masterbot-watchdog/target/release/masterbot-watchdog");
 	const bots = findBots().sort((left, right) => left.name.localeCompare(right.name));
 	const apps = [...bots.map((bot) => buildApp(bot, cwd)), buildMonitorApp(cwd)];
+
+	if (existsSync(watchdogBinaryPath)) {
+		apps.push(buildWatchdogApp(cwd));
+	} else {
+		console.log("Skipping masterbot-watchdog PM2 app because release binary was not found.");
+	}
+
 	const nextContent = buildEcosystemContent(apps);
 	const tempPath = path.join(
 		cwd,
@@ -106,7 +130,7 @@ function main() {
 
 	writeFileSync(tempPath, nextContent);
 	renameSync(tempPath, ecosystemPath);
-	console.log(`Built ecosystem.config.js with ${bots.length} bot(s) and 1 monitor.`);
+	console.log(`Built ecosystem.config.js with ${bots.length} bot(s), 1 monitor, and ${existsSync(watchdogBinaryPath) ? "1 watchdog" : "0 watchdog"}.`);
 }
 
 main();

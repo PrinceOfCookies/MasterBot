@@ -49,6 +49,19 @@ module.exports = {
         "MASTER_HEALTH_MONITOR": "true",
         "NODE_ENV": "production"
       }
+    },
+    {
+      "name": "masterbot-watchdog",
+      "script": "rust/masterbot-watchdog/target/release/masterbot-watchdog",
+      "args": "--watch --interval 10",
+      "cwd": "/home/Cookies/MainHDD/Projects/active/MasterBot",
+      "instances": 1,
+      "autorestart": true,
+      "watch": false,
+      "env": {
+        "NODE_ENV": "production",
+        "MASTERBOT_WATCHDOG": "1"
+      }
     }
   ]
 };

@@ -1,0 +1,11 @@
+[package]
+name = "masterbot-watchdog"
+version = "0.1.0"
+edition = "2026"
+
+[dependencies]
+anyhow = "1.0.102"
+clap = "4.6.1"
+serde = "1.0.228"
+serde_json = "1.0.149"
+sysinfo = "0.39.1"

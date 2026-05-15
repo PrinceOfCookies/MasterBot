@@ -6,6 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:ecosystem": "node scripts/buildEcosystem.js",
+    "watchdog:build": "cargo build --release --manifest-path rust/masterbot-watchdog/Cargo.toml",
+    "watchdog": "./rust/masterbot-watchdog/target/release/masterbot-watchdog --watch --interval 10",
     "monitor": "node scripts/monitorPm2.js",
     "start:monitor": "npm run build:ecosystem && node scripts/monitorPm2.js",
     "start": "npm run build:ecosystem && npx pm2-runtime start ecosystem.config.js",

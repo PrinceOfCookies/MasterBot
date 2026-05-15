@@ -5,7 +5,12 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "build:ecosystem": "node scripts/buildEcosystem.js",
+    "start": "npm run build:ecosystem && npx pm2-runtime start ecosystem.config.js",
+    "pm2:start": "npm run build:ecosystem && npx pm2 start ecosystem.config.js",
+    "pm2:list": "npx pm2 list",
+    "pm2:logs": "npx pm2 logs",
+    "pm2:monit": "npx pm2 monit"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +21,7 @@
     "discord-api-types": "^0.38.47",
     "discord.js": "^14.26.4",
     "dotenv": "^17.4.2",
+    "pm2": "^5.4.3",
     "mysql": "^2.18.1",
     "os": "^0.1.2",
     "rss-parser": "^3.13.0",

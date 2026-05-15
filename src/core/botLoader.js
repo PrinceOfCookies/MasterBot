@@ -1,5 +1,5 @@
 const chalk = require("chalk");
-const { findBots } = require("./botdiscovery");
+const { findBots, findBotByName } = require("./botDiscovery");
 const { createClient } = require("./clientfactory");
 const { createBotDatabase } = require("./database");
 const { loadTools, loadFunctions } = require("./functionloader");
@@ -15,14 +15,14 @@ function getBotToken(bot) {
 async function startBot(bot) {
 	if (bot.config.enabled === false) {
 		console.log(chalk.yellow(`[${bot.name}] Disabled in bot config, skipping.`));
-		return;
+		return null;
 	}
 
 	const token = getBotToken(bot);
 
 	if (!token) {
 		console.log(chalk.red(`[${bot.name}] Missing bot token`));
-		return;
+		return null;
 	}
 
 	const client = createClient(bot);
@@ -55,6 +55,8 @@ async function startBot(bot) {
 	}
 
 	console.log(chalk.green(`[${bot.name}] Logged in as ${client.user.tag}`));
+
+	return client;
 }
 
 async function startAllBots() {
@@ -75,5 +77,7 @@ async function startAllBots() {
 }
 
 module.exports = {
-	startAllBots
+	findBotByName,
+	startAllBots,
+	startBot
 };

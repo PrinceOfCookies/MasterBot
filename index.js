@@ -1,5 +1,5 @@
 require("dotenv").config();
 
-const { startAllBots } = require("./src/core/botloader");
+const { startAllBots } = require("./src/core/botLoader");
 
 startAllBots().catch(console.error);

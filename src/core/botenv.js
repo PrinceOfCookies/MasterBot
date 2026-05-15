@@ -7,7 +7,7 @@ function loadBotEnv(botRoot, envFile = ".env") {
 
 	if (!existsSync(envPath)) return {};
 
-	return dotenv.config({ path: envPath }).parsed ?? {};
+	return dotenv.config({ path: envPath, quiet: true }).parsed ?? {};
 }
 
 module.exports = {

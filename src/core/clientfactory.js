@@ -33,6 +33,8 @@ function createClient(bot) {
 	client.cooldowns = new Collection();
 	client.buttons = new Collection();
 	client.commandArray = [];
+	client.lazyFunctions = Object.create(null);
+	client.startupProfiler = null;
 
 	client.botPaths = {
 		tools: path.join(bot.root, bot.config.paths?.tools ?? defaultPaths.tools),

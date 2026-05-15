@@ -3,6 +3,7 @@ const path = require("path");
 const { promisify } = require("util");
 
 const { findBots } = require("../core/botDiscovery");
+const { getCachedProcesses } = require("../pm2/pm2Cache");
 
 const execFileAsync = promisify(execFile);
 const MAX_BUFFER = 20 * 1024 * 1024;
@@ -104,23 +105,7 @@ function getPm2ProcessMap(processes) {
 }
 
 async function getProcessList() {
-	const { stdout } = await runPm2(["jlist"]);
-	const trimmed = stdout.trim();
-
-	if (!trimmed) return [];
-
-	let parsed;
-
-	try {
-		parsed = JSON.parse(trimmed);
-	} catch (error) {
-		const wrapped = new Error("Failed to parse PM2 jlist output.");
-		wrapped.cause = error;
-		wrapped.stdout = redactSensitive(trimmed);
-		throw wrapped;
-	}
-
-	return Array.isArray(parsed) ? parsed : [];
+	return getCachedProcesses();
 }
 
 function toNumber(value) {
@@ -150,14 +135,14 @@ function formatStatusRecord(botName, process = null) {
 
 async function listBots() {
 	const bots = findBots().sort((left, right) => left.name.localeCompare(right.name));
-	const processes = getPm2ProcessMap(await getProcessList());
+	const processes = getPm2ProcessMap(getCachedProcesses());
 
 	return bots.map((bot) => formatStatusRecord(bot.name, processes.get(bot.name) ?? null));
 }
 
 async function getBotStatus(botName) {
 	const normalized = assertKnownBotName(botName);
-	const processes = getPm2ProcessMap(await getProcessList());
+	const processes = getPm2ProcessMap(getCachedProcesses());
 
 	return formatStatusRecord(normalized, processes.get(normalized) ?? null);
 }

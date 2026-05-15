@@ -18,6 +18,7 @@ const {
 
 const { sendControlAlert } = require("./alertUsers");
 const { getBotLogs, getBotStatus, listBots, restartBot, startBot, stopBot, updateBot, redactSensitive } = require("./pm2Control");
+const { startPm2Cache } = require("../pm2/pm2Cache");
 
 const TOKEN = process.env.TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -393,6 +394,8 @@ async function main() {
 	requireEnv("TOKEN", TOKEN);
 	requireEnv("CLIENT_ID", CLIENT_ID);
 	requireEnv("CONTROL_ALLOWED_USERS", process.env.CONTROL_ALLOWED_USERS);
+
+	await startPm2Cache();
 
 	const client = new Client({
 		intents: [GatewayIntentBits.Guilds]

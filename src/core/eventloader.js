@@ -1,26 +1,5 @@
 const path = require("path");
-const { existsSync, readdirSync, statSync } = require("fs");
-
-function collectEventFiles(folderPath) {
-	if (!existsSync(folderPath)) return [];
-
-	const files = [];
-
-	for (const item of readdirSync(folderPath)) {
-		const itemPath = path.join(folderPath, item);
-
-		if (statSync(itemPath).isDirectory()) {
-			files.push(...collectEventFiles(itemPath));
-			continue;
-		}
-
-		if (item.endsWith(".js")) {
-			files.push(itemPath);
-		}
-	}
-
-	return files;
-}
+const { getDiscoveredFiles, getEventFiles } = require("../cache/fileDiscoveryCache");
 
 function registerEvent(client, filePath) {
 	const event = require(filePath);
@@ -39,7 +18,7 @@ function registerEvent(client, filePath) {
 function loadEventsFromFolder(client, folderPath, options = {}) {
 	const disabled = new Set(options.disabled ?? []);
 
-	for (const filePath of collectEventFiles(folderPath)) {
+	for (const filePath of folderPath) {
 		const fileName = path.basename(filePath);
 
 		if (disabled.has(fileName)) continue;
@@ -51,14 +30,16 @@ function loadEventsFromFolder(client, folderPath, options = {}) {
 function loadEvents(client, bot) {
 	const config = bot.config.events ?? {};
 	const mode = config.mode ?? "extend";
+	const defaultFiles = getDiscoveredFiles(client.botPaths.defaultEvents);
+	const botFiles = getEventFiles(client);
 
 	if (mode !== "replace") {
-		loadEventsFromFolder(client, client.botPaths.defaultEvents, {
+		loadEventsFromFolder(client, defaultFiles, {
 			disabled: config.disabled
 		});
 	}
 
-	loadEventsFromFolder(client, client.botPaths.events);
+	loadEventsFromFolder(client, botFiles);
 }
 
 module.exports = {

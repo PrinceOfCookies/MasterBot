@@ -4,6 +4,7 @@ const { createClient } = require("./clientfactory");
 const { createBotDatabase } = require("./database");
 const { loadTools, loadFunctions } = require("./functionloader");
 const { loadEvents } = require("./eventloader");
+const { createStartupProfiler } = require("./startupProfiler");
 
 function getBotToken(bot) {
 	if (bot.config.token) return bot.config.token;
@@ -25,38 +26,52 @@ async function startBot(bot) {
 		return null;
 	}
 
+	const profiler = createStartupProfiler(bot.name);
+	bot.startupProfiler = profiler;
 	const client = createClient(bot);
+	client.startupProfiler = profiler;
 
-	client.db = await createBotDatabase(bot);
-	client.sql = client.db;
-	client.connection = client.db;
+	try {
+		profiler.mark("createClient");
 
-	loadTools(client, bot);
-	loadFunctions(client, bot);
+		client.db = await createBotDatabase(bot);
+		client.sql = client.db;
+		client.connection = client.db;
 
-	if (typeof bot.config.setup === "function") {
-		await bot.config.setup(client, bot);
+		loadTools(client, bot);
+		profiler.mark("loadTools");
+		loadFunctions(client, bot);
+		profiler.mark("loadFunctions");
+
+		if (typeof bot.config.setup === "function") {
+			await bot.config.setup(client, bot);
+		}
+
+		if (bot.config.autoHandleCommands !== false && typeof client.handleCommands === "function") {
+			await client.handleCommands();
+		}
+
+		loadEvents(client, bot);
+		profiler.mark("loadEvents");
+
+		if (bot.config.autoHandleEvents !== false && typeof client.handleEvents === "function") {
+			await client.handleEvents();
+		}
+
+		await client.login(token);
+		profiler.mark("login");
+
+		if (typeof bot.config.afterLogin === "function") {
+			await bot.config.afterLogin(client, bot);
+			profiler.mark("afterLogin");
+		}
+
+		console.log(chalk.green(`[${bot.name}] Logged in as ${client.user.tag}`));
+
+		return client;
+	} finally {
+		profiler.end();
 	}
-
-	if (bot.config.autoHandleCommands !== false && typeof client.handleCommands === "function") {
-		await client.handleCommands();
-	}
-
-	loadEvents(client, bot);
-
-	if (bot.config.autoHandleEvents !== false && typeof client.handleEvents === "function") {
-		await client.handleEvents();
-	}
-
-	await client.login(token);
-
-	if (typeof bot.config.afterLogin === "function") {
-		await bot.config.afterLogin(client, bot);
-	}
-
-	console.log(chalk.green(`[${bot.name}] Logged in as ${client.user.tag}`));
-
-	return client;
 }
 
 async function startAllBots() {

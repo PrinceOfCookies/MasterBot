@@ -2,6 +2,7 @@ const { execFile } = require("child_process");
 const { promisify } = require("util");
 const path = require("path");
 const { findBots } = require("../core/botDiscovery");
+const { getCachedProcess, getCachedProcesses } = require("./pm2Cache");
 
 const execFileAsync = promisify(execFile);
 const MAX_BUFFER = 10 * 1024 * 1024;
@@ -49,25 +50,11 @@ async function runPm2(args) {
 }
 
 async function getProcessList() {
-	const { stdout } = await runPm2(["jlist"]);
-	const trimmed = stdout.trim();
-
-	if (!trimmed) return [];
-
-	try {
-		const parsed = JSON.parse(trimmed);
-		return Array.isArray(parsed) ? parsed : [];
-	} catch (error) {
-		const wrapped = new Error("Failed to parse PM2 jlist output as JSON.");
-		wrapped.cause = error;
-		wrapped.stdout = stdout;
-		throw wrapped;
-	}
+	return getCachedProcesses();
 }
 
 async function getProcessByName(name) {
-	const processes = await getProcessList();
-	return processes.find((process) => process?.name === name) ?? null;
+	return getCachedProcess(name) ?? null;
 }
 
 async function restartProcess(name) {

@@ -1,5 +1,6 @@
 const { findBots } = require("../core/botDiscovery");
-const { getProcessList, restartProcess, stopProcess } = require("./pm2Client");
+const { getCachedProcesses, startPm2Cache } = require("./pm2Cache");
+const { restartProcess, stopProcess } = require("./pm2Client");
 const { sendAlert } = require("./alertSink");
 const { formatBotStatus } = require("./statusFormatter");
 const { calculateBotAllocations, getSystemResources } = require("./resourceAllocator");
@@ -416,14 +417,7 @@ async function runHealthCheck() {
 		await sendAllocationWarnings(bots, allocationMap, now);
 	}
 
-	let processes;
-
-	try {
-		processes = await getProcessList();
-	} catch (error) {
-		console.warn(`[pm2] failed to read process list`, error);
-		return;
-	}
+	const processes = getCachedProcesses();
 
 	const processByName = new Map(processes.map((process) => [process.name, process]));
 
@@ -464,6 +458,7 @@ function startHealthMonitor(options = {}) {
 
 	console.log(`[health] PM2 health monitor started (${intervalMs}ms)`);
 	void (async () => {
+		await startPm2Cache();
 		await sendAllocationWarnings(initialBots, allocationMap, Date.now());
 
 		if (stopped) return;

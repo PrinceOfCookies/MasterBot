@@ -1,29 +1,9 @@
 const path = require("path");
-const { existsSync, readdirSync, statSync } = require("fs");
 const chalk = require("chalk");
 const { REST } = require("@discordjs/rest");
 const { Routes } = require("discord-api-types/v10");
-
-function collectCommandFiles(folderPath) {
-	if (!folderPath || !existsSync(folderPath)) return [];
-
-	const commandFiles = [];
-
-	for (const item of readdirSync(folderPath)) {
-		const itemPath = path.join(folderPath, item);
-
-		if (statSync(itemPath).isDirectory()) {
-			commandFiles.push(...collectCommandFiles(itemPath));
-			continue;
-		}
-
-		if (item.endsWith(".js")) {
-			commandFiles.push(itemPath);
-		}
-	}
-
-	return commandFiles;
-}
+const { getCommandFiles } = require("../../cache/fileDiscoveryCache");
+const { createCommandHash, hasCommandHashChanged, setCommandHash } = require("../../cache/commandHashCache");
 
 function getLog(client) {
 	if (typeof client.fastLog === "function") {
@@ -49,26 +29,48 @@ function resetCommandState(client) {
 	}
 }
 
-async function refreshSlashCommands(client, commandArray) {
+async function refreshSlashCommands(client, commandArray, commandHash) {
 	const clientId = client.botEnv?.CLIENT_ID ?? client.botConfig?.clientId;
 	const token = client.botEnv?.TOKEN ?? client.botConfig?.token;
 
 	if (!clientId || !token) {
+		if (client.startupProfiler) {
+			client.startupProfiler.mark("registerCommands");
+		}
+
+		return;
+	}
+
+	if (!hasCommandHashChanged(client.botName, commandHash)) {
+		console.log(`[${client.botName}] Slash commands unchanged, skipping registration`);
+
+		if (client.startupProfiler) {
+			client.startupProfiler.mark("registerCommands");
+		}
+
 		return;
 	}
 
 	const rest = new REST({ version: "10" }).setToken(token);
 
 	try {
-		console.log(chalk.blue(`[${client.botName}] Refreshing application (/) commands...`));
+		console.log(chalk.blue(`[${client.botName}] Slash commands changed, refreshing`));
 		const start = process.hrtime.bigint();
 		await rest.put(Routes.applicationCommands(clientId), { body: commandArray });
+		setCommandHash(client.botName, commandHash);
 		const durationMs = Number(process.hrtime.bigint() - start) / 1000000;
 		console.log(
 			chalk.green(`[${client.botName}] Refreshed application (/) commands in `) +
 				chalk.yellow(`${durationMs.toFixed(3)}ms`)
 		);
+		if (client.startupProfiler) {
+			client.startupProfiler.mark("registerCommands");
+		}
 	} catch (error) {
+		if (client.startupProfiler) {
+			client.startupProfiler.mark("registerCommands");
+		}
+
 		console.error(chalk.red(`[${client.botName}] Failed to refresh application commands`), error);
 	}
 }
@@ -76,7 +78,7 @@ async function refreshSlashCommands(client, commandArray) {
 module.exports = (client) => {
 	client.handleCommands = async () => {
 		const commandsRoot = client.botPaths?.commands ? path.resolve(client.botPaths.commands) : null;
-		const commandFiles = collectCommandFiles(commandsRoot);
+		const commandFiles = getCommandFiles(client);
 		const log = getLog(client);
 
 		resetCommandState(client);
@@ -109,6 +111,12 @@ module.exports = (client) => {
 			}
 		}
 
-		await refreshSlashCommands(client, client.commandArray);
+		if (client.startupProfiler) {
+			client.startupProfiler.mark("loadCommands");
+		}
+
+		const commandHash = createCommandHash(client.commandArray);
+
+		await refreshSlashCommands(client, client.commandArray, commandHash);
 	};
 };
